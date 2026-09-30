@@ -1,4 +1,4 @@
-local OBSIDIAN_UI_REPO = "https://raw.githubusercontent.com/D3f4ultscript/Cryptic-Scripts/refs/heads/main/Obsidian_UI/"
+local OBSIDIAN_UI_REPO = "https://raw.githubusercontent.com/croksyscript/CrypticLoader/refs/heads/main/Obsidian/Obsidian_UI/"
 
 local cloneref = (cloneref or clonereference or function(instance: any)
     return instance
@@ -31,7 +31,7 @@ local Toggles = {}
 local Options = {}
 local Tooltips = {}
 
-local BaseURL = "https://raw.githubusercontent.com/D3f4ultscript/Cryptic-Scripts/refs/heads/main/Obsidian_UI/"
+local BaseURL = "https://raw.githubusercontent.com/croksyscript/CrypticLoader/refs/heads/main/Obsidian/Obsidian_UI/"
 local CustomImageManager = {}
 local CustomImageManagerAssets = {
     TransparencyTexture = {
