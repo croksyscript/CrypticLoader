@@ -1,5 +1,0 @@
-ADDED:
-Reseller Groupbox - Mit Discord Link für Potassium
-
-FIXED / IMPROVED:
-Handy UI - Scroll Hinweis unten, wenn man noch scrollen kann
