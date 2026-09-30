@@ -14332,9 +14332,10 @@ function Library:CreateWindow(WindowInfo)
 
         local CreditsSubTab = InfoTabbox:AddTab("Credits", "sparkles")
 
-        CreditsSubTab:AddDivider("Developer")
-        CreditsSubTab:AddLabel("Owner: D3f4ult")
-        CreditsSubTab:AddLabel("Head-Developer: D3f4ult")
+        CreditsSubTab:AddDivider("Credits")
+        CreditsSubTab:AddLabel("Founder: Croksy")
+        CreditsSubTab:AddLabel("Owner: Rifty")
+        CreditsSubTab:AddLabel("Lead-Developer: Croksy, Rifty")
 
         CreditsSubTab:AddDivider("Links")
 
