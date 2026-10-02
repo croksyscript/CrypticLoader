@@ -14379,19 +14379,19 @@ function Library:CreateWindow(WindowInfo)
 
         local ResellerGroupBox = InfoTab:AddGroupbox({
             Side = "Right",
-            Name = "Reseller Ad",
+            Name = "CrypticBio.lol",
             IconName = "shopping-bag",
         })
 
         ResellerGroupBox:AddLabel({
-            Text = "We sell Potassium, cheap AI accounts, and FiveM products.",
+            Text = "Want a public profile with a cool design and for free? Then check out our new website.",
             DoesWrap = true,
         })
 
         ResellerGroupBox:AddButton({
-            Text = "Copy Discord Link",
+            Text = "Copy Link",
             Func = function()
-                copyInfoLink("Discord link", "https://discord.gg/QeyYGZvnmk")
+                copyInfoLink("Website link", "https://crypticbio.lol")
             end,
         })
 
