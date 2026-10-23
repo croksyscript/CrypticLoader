@@ -8420,6 +8420,310 @@ do
             end)
         end
 
+        --// Expanded popup (bigger overview of all values, with search and select all)
+        local PopupBackdrop
+
+        local function ClosePopup()
+            if PopupBackdrop then
+                PopupBackdrop:Destroy()
+                PopupBackdrop = nil
+            end
+        end
+
+        local function OpenPopup()
+            if Dropdown.Disabled or PopupBackdrop then
+                return
+            end
+
+            PopupBackdrop = New("TextButton", {
+                AutoButtonColor = false,
+                BackgroundColor3 = Color3.new(0, 0, 0),
+                BackgroundTransparency = 0.45,
+                Size = UDim2.fromScale(1, 1),
+                Text = "",
+                ZIndex = 40,
+                Parent = Overlay,
+            })
+            local Backdrop = PopupBackdrop
+            Backdrop.Activated:Connect(ClosePopup)
+
+            local Window = New("Frame", {
+                Active = true,
+                AnchorPoint = Vector2.new(0.5, 0.5),
+                BackgroundColor3 = "BackgroundColor",
+                Position = UDim2.fromScale(0.5, 0.5),
+                Size = UDim2.fromScale(0.45, 0.75),
+                ZIndex = 41,
+                Parent = Backdrop,
+            })
+            New("UIStroke", {
+                Color = "OutlineColor",
+                Parent = Window,
+            })
+            New("UICorner", {
+                CornerRadius = UDim.new(0, Library.CornerRadius),
+                Parent = Window,
+            })
+            New("UISizeConstraint", {
+                MaxSize = Vector2.new(560, 680),
+                MinSize = Vector2.new(300, 320),
+                Parent = Window,
+            })
+
+            local Title = New("TextLabel", {
+                BackgroundTransparency = 1,
+                Position = UDim2.fromOffset(10, 6),
+                Size = UDim2.new(1, -50, 0, 22),
+                TextSize = 16,
+                TextXAlignment = Enum.TextXAlignment.Left,
+                ZIndex = 42,
+                Parent = Window,
+            })
+
+            local CloseButton = New("TextButton", {
+                AnchorPoint = Vector2.new(1, 0),
+                BackgroundTransparency = 1,
+                Position = UDim2.new(1, -8, 0, 6),
+                Size = UDim2.fromOffset(22, 22),
+                Text = "X",
+                TextSize = 16,
+                ZIndex = 42,
+                Parent = Window,
+            })
+            CloseButton.Activated:Connect(ClosePopup)
+
+            local OffsetY = 34
+            local PopupSearch
+            if Info.Searchable then
+                PopupSearch = New("TextBox", {
+                    BackgroundColor3 = "MainColor",
+                    ClearTextOnFocus = false,
+                    PlaceholderText = "Search...",
+                    Position = UDim2.fromOffset(10, OffsetY),
+                    Size = UDim2.new(1, -20, 0, 24),
+                    Text = "",
+                    TextSize = 14,
+                    TextXAlignment = Enum.TextXAlignment.Left,
+                    ZIndex = 42,
+                    Parent = Window,
+                })
+                New("UIPadding", {
+                    PaddingLeft = UDim.new(0, 8),
+                    Parent = PopupSearch,
+                })
+                New("UIStroke", {
+                    Color = "OutlineColor",
+                    Parent = PopupSearch,
+                })
+                OffsetY += 30
+            end
+
+            local SelectAllPopup, UnselectAllPopup
+            if Dropdown.SelectAllButtons then
+                local Bar = New("Frame", {
+                    BackgroundTransparency = 1,
+                    Position = UDim2.fromOffset(10, OffsetY),
+                    Size = UDim2.new(1, -20, 0, 24),
+                    ZIndex = 42,
+                    Parent = Window,
+                })
+                New("UIListLayout", {
+                    FillDirection = Enum.FillDirection.Horizontal,
+                    Padding = UDim.new(0, 6),
+                    Parent = Bar,
+                })
+
+                local function MakeBarButton(Text)
+                    local Button = New("TextButton", {
+                        BackgroundColor3 = "MainColor",
+                        Size = UDim2.new(0.5, -3, 1, 0),
+                        Text = Text,
+                        TextSize = 14,
+                        ZIndex = 43,
+                        Parent = Bar,
+                    })
+                    New("UIStroke", {
+                        Color = "OutlineColor",
+                        Parent = Button,
+                    })
+                    return Button
+                end
+
+                SelectAllPopup = MakeBarButton("Select All")
+                UnselectAllPopup = MakeBarButton("Unselect All")
+                OffsetY += 30
+            end
+
+            local List = New("ScrollingFrame", {
+                AutomaticCanvasSize = Enum.AutomaticSize.Y,
+                BackgroundColor3 = "MainColor",
+                BorderSizePixel = 0,
+                CanvasSize = UDim2.fromOffset(0, 0),
+                Position = UDim2.fromOffset(10, OffsetY),
+                ScrollBarThickness = 4,
+                Size = UDim2.new(1, -20, 1, -(OffsetY + 10)),
+                ZIndex = 42,
+                Parent = Window,
+            })
+            New("UIStroke", {
+                Color = "OutlineColor",
+                Parent = List,
+            })
+            New("UIListLayout", {
+                Padding = UDim.new(0, 2),
+                Parent = List,
+            })
+
+            local function PopupValues()
+                local IsDictionary = not IsSequentialArray(Dropdown.Values)
+                local Filter = PopupSearch and string.lower(PopupSearch.Text) or ""
+                local Result = {}
+                for Key, RawValue in Dropdown.Values do
+                    local Value = IsDictionary and Key or RawValue
+                    if typeof(Value) == "string"
+                        and (Filter == "" or string.find(string.lower(Value), Filter, 1, true))
+                        and not table.find(Dropdown.DisabledValues or {}, Value)
+                    then
+                        table.insert(Result, Value)
+                    end
+                end
+                if IsDictionary then
+                    table.sort(Result)
+                end
+                return Result
+            end
+
+            local function IsPicked(Value)
+                if Dropdown.Multi then
+                    return Dropdown.Value[Value] == true
+                end
+                return Dropdown.Value == Value
+            end
+
+            local Rebuild
+            local function PickValue(Value)
+                if Dropdown.Multi then
+                    local NewValue = {}
+                    for Val, Active in Dropdown.Value do
+                        if Active then
+                            NewValue[Val] = true
+                        end
+                    end
+                    NewValue[Value] = (not NewValue[Value]) or nil
+                    Dropdown:SetValue(NewValue)
+                    Rebuild()
+                else
+                    if IsPicked(Value) then
+                        if Info.AllowNull then
+                            Dropdown:SetValue(nil)
+                        end
+                    else
+                        Dropdown:SetValue(Value)
+                    end
+                    ClosePopup()
+                end
+            end
+
+            Rebuild = function()
+                local Scroll = List.CanvasPosition
+                for _, Child in List:GetChildren() do
+                    if Child:IsA("TextButton") then
+                        Child:Destroy()
+                    end
+                end
+
+                local Values = PopupValues()
+                for Order, Value in Values do
+                    local Picked = IsPicked(Value)
+                    local Row = New("TextButton", {
+                        AutoButtonColor = false,
+                        BackgroundColor3 = Picked and Library.Scheme.AccentColor or Library.Scheme.MainColor,
+                        BackgroundTransparency = Picked and 0.55 or 1,
+                        LayoutOrder = Order,
+                        Size = UDim2.new(1, -6, 0, 24),
+                        Text = Value,
+                        TextSize = 14,
+                        TextXAlignment = Enum.TextXAlignment.Left,
+                        TextTruncate = Enum.TextTruncate.AtEnd,
+                        ZIndex = 43,
+                        Parent = List,
+                    })
+                    New("UIPadding", {
+                        PaddingLeft = UDim.new(0, 8),
+                        PaddingRight = UDim.new(0, 8),
+                        Parent = Row,
+                    })
+                    Row.Activated:Connect(function()
+                        PickValue(Value)
+                    end)
+                end
+
+                local Count = 0
+                if Dropdown.Multi then
+                    for _, Active in Dropdown.Value do
+                        if Active then
+                            Count += 1
+                        end
+                    end
+                end
+                Title.Text = (Dropdown.Text or "Select") .. (Dropdown.Multi and string.format(" (%d selected, %d shown)", Count, #Values) or "")
+                List.CanvasPosition = Scroll
+            end
+
+            local function SetShown(Picked)
+                local NewValue = {}
+                for Val, Active in Dropdown.Value do
+                    if Active then
+                        NewValue[Val] = true
+                    end
+                end
+                for _, Value in PopupValues() do
+                    NewValue[Value] = Picked or nil
+                end
+                Dropdown:SetValue(NewValue)
+                Rebuild()
+            end
+
+            if SelectAllPopup then
+                SelectAllPopup.Activated:Connect(function()
+                    SetShown(true)
+                end)
+                UnselectAllPopup.Activated:Connect(function()
+                    SetShown(false)
+                end)
+            end
+
+            if PopupSearch then
+                PopupSearch:GetPropertyChangedSignal("Text"):Connect(Rebuild)
+            end
+
+            Rebuild()
+        end
+
+        local ExpandButton = New("ImageButton", {
+            AnchorPoint = Vector2.new(1, 0.5),
+            BackgroundColor3 = "BackgroundColor",
+            ImageColor3 = "FontColor",
+            ImageTransparency = 0.3,
+            Position = UDim2.new(1, -22, 0.5, 0),
+            Size = UDim2.fromOffset(15, 15),
+            ZIndex = 4,
+            Parent = DisplayContainer,
+        })
+        New("UIStroke", {
+            Color = "OutlineColor",
+            Parent = ExpandButton,
+        })
+        New("UIPadding", {
+            PaddingBottom = UDim.new(0, 2),
+            PaddingLeft = UDim.new(0, 2),
+            PaddingRight = UDim.new(0, 2),
+            PaddingTop = UDim.new(0, 2),
+            Parent = ExpandButton,
+        })
+        Library:ApplyLucideIcon(ExpandButton, Library:GetIcon("maximize-2") or Library:GetIcon("expand") or Library:GetIcon("chevron-down"))
+        table.insert(Dropdown.Connections, ExpandButton.Activated:Connect(OpenPopup))
+
         local MenuTable
         MenuTable = Library:AddContextMenu(
             DisplayContainer,
