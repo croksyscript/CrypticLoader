@@ -12453,14 +12453,23 @@ function Library:CreateWindow(WindowInfo)
                 )
                 Library:AddOutline(TabboxHolder)
 
-                TabboxButtons = New("Frame", {
+                TabboxButtons = New("ScrollingFrame", {
+                    AutomaticCanvasSize = Enum.AutomaticSize.X,
                     BackgroundTransparency = 1,
-                    Size = UDim2.new(1, 0, 0, 34),
+                    BorderSizePixel = 0,
+                    BottomImage = "rbxasset://textures/ui/Scroll/scroll-middle.png",
+                    CanvasSize = UDim2.fromScale(0, 0),
+                    ElasticBehavior = Enum.ElasticBehavior.Never,
+                    MidImage = "rbxasset://textures/ui/Scroll/scroll-middle.png",
+                    ScrollBarImageColor3 = "AccentColor",
+                    ScrollBarThickness = 2,
+                    ScrollingDirection = Enum.ScrollingDirection.X,
+                    Size = UDim2.new(1, 0, 0, 35),
+                    TopImage = "rbxasset://textures/ui/Scroll/scroll-middle.png",
                     Parent = TabboxHolder,
                 })
                 New("UIListLayout", {
                     FillDirection = Enum.FillDirection.Horizontal,
-                    HorizontalFlex = Enum.UIFlexAlignment.Fill,
                     Parent = TabboxButtons,
                 })
             end
@@ -12484,6 +12493,31 @@ function Library:CreateWindow(WindowInfo)
 
                 ParentBox = if ParentObj.Type == "Groupbox" then ParentObj else nil,
             }
+
+            local TabList = {}
+
+            function Tabbox:UpdateWidths()
+                local Scale = Library.DPIScale
+                local Total = 0
+                for _, Tab in TabList do
+                    Tab.NaturalWidth = math.ceil(Tab.ButtonContent.AbsoluteSize.X / Scale) + 24
+                    Total += Tab.NaturalWidth
+                end
+                local Extra = math.max(0, TabboxButtons.AbsoluteSize.X / Scale - Total) / math.max(#TabList, 1)
+                for _, Tab in TabList do
+                    Tab.ButtonHolder.Size = UDim2.fromOffset(math.floor(Tab.NaturalWidth + Extra), 34)
+                end
+            end
+
+            table.insert(Tabbox.Connections, TabboxButtons:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
+                Tabbox:UpdateWidths()
+            end))
+
+            table.insert(Tabbox.Connections, TabboxButtons.InputChanged:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseWheel then
+                    TabboxButtons.CanvasPosition -= Vector2.new(input.Position.Z * 40, 0)
+                end
+            end))
 
             function Tabbox:UpdateCorners()
                 for _, Tab in Tabbox.Tabs do
@@ -12602,6 +12636,7 @@ function Library:CreateWindow(WindowInfo)
                     Destroyed = false,
 
                     ButtonHolder = Button,
+                    ButtonContent = ButtonContent,
                     Container = Container,
                     ButtonCorner = ButtonCorner,
 
@@ -12676,6 +12711,11 @@ function Library:CreateWindow(WindowInfo)
                 function Tab:Destroy()
                     Tab.Destroyed = true
 
+                    local ListIndex = table.find(TabList, Tab)
+                    if ListIndex then
+                        table.remove(TabList, ListIndex)
+                    end
+
                     if Tab.Connections then
                         for _, Connection in Tab.Connections do
                             Connection:Disconnect()
@@ -12709,10 +12749,15 @@ function Library:CreateWindow(WindowInfo)
                 end
 
                 Button.MouseButton1Click:Connect(Tab.Show)
+                table.insert(Tab.Connections, ButtonContent:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
+                    Tabbox:UpdateWidths()
+                end))
 
                 setmetatable(Tab, BaseGroupbox)
 
                 Tabbox.Tabs[TabStoringIndex] = Tab
+                table.insert(TabList, Tab)
+                Tabbox:UpdateWidths()
                 Tabbox:UpdateCorners()
 
                 return Tab, TabStoringIndex
