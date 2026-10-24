@@ -12513,8 +12513,32 @@ function Library:CreateWindow(WindowInfo)
                 Tabbox:UpdateWidths()
             end))
 
-            table.insert(Tabbox.Connections, TabboxButtons.InputChanged:Connect(function(input)
-                if input.UserInputType == Enum.UserInputType.MouseWheel then
+            local WheelHover = false
+
+            local function CanScrollTabs()
+                return TabboxButtons.AbsoluteCanvasSize.X > TabboxButtons.AbsoluteSize.X + 1
+            end
+
+            local function SetPageScrolling(Enabled)
+                for _, Side in Tab.Sides do
+                    Side.ScrollingEnabled = Enabled
+                end
+            end
+
+            table.insert(Tabbox.Connections, TabboxButtons.MouseEnter:Connect(function()
+                WheelHover = true
+                if CanScrollTabs() then
+                    SetPageScrolling(false)
+                end
+            end))
+
+            table.insert(Tabbox.Connections, TabboxButtons.MouseLeave:Connect(function()
+                WheelHover = false
+                SetPageScrolling(true)
+            end))
+
+            table.insert(Tabbox.Connections, UserInputService.InputChanged:Connect(function(input)
+                if WheelHover and input.UserInputType == Enum.UserInputType.MouseWheel and CanScrollTabs() then
                     TabboxButtons.CanvasPosition -= Vector2.new(input.Position.Z * 40, 0)
                 end
             end))
@@ -12784,6 +12808,11 @@ function Library:CreateWindow(WindowInfo)
             })
 
             function Tabbox:Destroy()
+                if WheelHover then
+                    WheelHover = false
+                    SetPageScrolling(true)
+                end
+
                 if Tabbox.PoppedOut then
                     Tabbox:SetPoppedOut(false)
                 end
