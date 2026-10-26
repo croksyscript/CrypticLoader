@@ -264,6 +264,8 @@ local Library = {
     PopOutSnapDistance = 80,
     PopOutDragThreshold = 8,
     PopOutHoldTime = 0.15,
+    AllowMovingUI = false,
+    PopOutBoxes = {},
 
     --// Signals \\--
     Signals = {},
@@ -2582,6 +2584,8 @@ function Library:MakeBoxPopOut(Box: any, Options: {
         return
     end
 
+    table.insert(Library.PopOutBoxes, Box)
+
     local BoxHolder = Box.BoxHolder
     local Holder = Box.Holder
     local Header = Options.Header
@@ -2918,7 +2922,7 @@ function Library:MakeBoxPopOut(Box: any, Options: {
     end
 
     local function BeginDrag(Input: InputObject)
-        if DragState ~= "Idle" or Box.Destroyed or not (ScreenGui and ScreenGui.Parent) then
+        if DragState ~= "Idle" or Box.Destroyed or not Library.AllowMovingUI or not (ScreenGui and ScreenGui.Parent) then
             return
         end
 
@@ -3024,6 +3028,22 @@ function Library:MakeBoxPopOut(Box: any, Options: {
             UpdateDrag(Input)
         end
     end))
+end
+
+function Library:SetAllowMovingUI(Value: boolean)
+    Library.AllowMovingUI = Value == true
+    if Library.AllowMovingUI then
+        return
+    end
+
+    for Index = #Library.PopOutBoxes, 1, -1 do
+        local Box = Library.PopOutBoxes[Index]
+        if Box.Destroyed then
+            table.remove(Library.PopOutBoxes, Index)
+        elseif Box.PoppedOut then
+            Box:SetPoppedOut(false)
+        end
+    end
 end
 
 --// Deprecated \\--
@@ -14857,6 +14877,15 @@ function Library:CreateWindow(WindowInfo)
                 Default = Library.ShowCustomCursor,
                 Callback = function(value)
                     Library.ShowCustomCursor = value
+                end,
+            })
+
+            UtilityGroupBox:AddToggle("AllowMovingUI", {
+                Text = "Allow Moving UI",
+                Tooltip = "On: pull group boxes out of the window and rearrange them. Off: boxes stay in place. The window itself can always be moved",
+                Default = Library.AllowMovingUI,
+                Callback = function(value)
+                    Library:SetAllowMovingUI(value)
                 end,
             })
 
