@@ -14775,24 +14775,6 @@ function Library:CreateWindow(WindowInfo)
             end,
         })
 
-        local ResellerGroupBox = InfoTab:AddGroupbox({
-            Side = "Right",
-            Name = "CrypticBio.lol",
-            IconName = "shopping-bag",
-        })
-
-        ResellerGroupBox:AddLabel({
-            Text = "Want a public profile with a cool design and for free? Then check out our new website.",
-            DoesWrap = true,
-        })
-
-        ResellerGroupBox:AddButton({
-            Text = "Copy Link",
-            Func = function()
-                copyInfoLink("Website link", "https://crypticbio.lol")
-            end,
-        })
-
         local PlayerSubTab = InfoTabbox:AddTab("Player", "user")
 
         PlayerSubTab:AddDivider("Account")
